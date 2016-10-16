@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"runtime"
 	"time"
@@ -90,30 +91,35 @@ func main() {
 
 	world := &goids.World{
 		Goids: []*goids.Goid{
-			{0, 0, 0, 0.01, goids.ColorBlue},
-			{0, 0.5, 90, 0.01, goids.ColorBlue},
-			{0, 0, 180, 0.01, goids.ColorBlue},
+			{0, 0, goids.ToVel(0, 0.001), goids.ColorBlue},
+			{0, -1, goids.ToVel(0, 0.001), goids.ColorGreen},
+			{-0.1, -1, goids.ToVel(0, 0.001), goids.ColorRed},
 		},
 	}
-	for i := 0; i < 100; i++ {
-		world.Goids = append(world.Goids, goids.NewGoid(0.01+0.0001*(float32(i))))
-	}
-	for i := 0; i < 100; i++ {
-		world.Goids = append(world.Goids, goids.NewGoid(0.02))
-	}
-	go func() {
-		for {
-			dt := time.Millisecond * 10
-			time.Sleep(dt)
-			headingInc := float32(1)
-			for _, goid := range world.Goids {
-				goid.Heading += headingInc
-				if goid.Heading >= 360 {
-					goid.Heading = 0
+	/*
+		for i := 0; i < 100; i++ {
+			world.Goids = append(world.Goids, goids.NewGoid(0.001+0.0001*(float32(i))))
+		}
+		for i := 0; i < 100; i++ {
+			world.Goids = append(world.Goids, goids.NewGoid(0.002))
+		}
+	*/
+	/*
+		go func() {
+			return
+			for {
+				dt := time.Millisecond * 10
+				time.Sleep(dt)
+				headingInc := float32(1)
+				for _, goid := range world.Goids {
+					goid.Heading += headingInc
+					if goid.Heading >= 360 {
+						goid.Heading = 0
+					}
 				}
 			}
-		}
-	}()
+		}()
+	*/
 	//gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -131,9 +137,11 @@ func main() {
 		for _, goid := range world.Goids {
 			goidModel := model
 			goidModel = goidModel.Mul4(mgl32.Translate3D(goid.X, goid.Y, 0))
-			goidModel = goidModel.Mul4(mgl32.HomogRotate3DZ(mgl32.DegToRad(goid.Heading)))
+			goidModel = goidModel.Mul4(mgl32.HomogRotate3DZ(mgl32.DegToRad(goid.Heading())))
 			goidModel = goidModel.Mul4(scaleDown)
 
+			// first rotate model to point in the X+
+			goidModel = goidModel.Mul4(mgl32.HomogRotate3DZ(-math.Pi / 2))
 			gl.UniformMatrix4fv(modelUniform, 1, false, &goidModel[0])
 
 			colorUniform := gl.GetUniformLocation(program, gl.Str("color\x00"))
