@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
 	"os"
 	"runtime"
-	"sync"
 	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -20,11 +17,6 @@ func init() {
 	// See documentation for functions that are only allowed to be called from the main thread.
 	runtime.LockOSThread()
 }
-
-var (
-	colorGreen = mgl32.Vec4{0.1, 0.8, 0.1, 1}
-	colorBlue  = mgl32.Vec4{0.1, 0.1, 0.8, 1}
-)
 
 func main() {
 	err := glfw.Init()
@@ -96,25 +88,23 @@ func main() {
 	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
 	gl.ClearColor(0.1, 0.1, 0.1, 1.0)
 
-	world := &World{
-		Goids: []*Goid{
-			{0, 0, 0, 0.01, colorBlue},
-			{0, 0.5, 90, 0.01, colorBlue},
-			{0, 0, 180, 0.01, colorBlue},
+	world := &goids.World{
+		Goids: []*goids.Goid{
+			{0, 0, 0, 0.01, goids.ColorBlue},
+			{0, 0.5, 90, 0.01, goids.ColorBlue},
+			{0, 0, 180, 0.01, goids.ColorBlue},
 		},
 	}
 	for i := 0; i < 100; i++ {
-		world.Goids = append(world.Goids, newGoid(0.01+0.0001*(float32(i))))
+		world.Goids = append(world.Goids, goids.NewGoid(0.01+0.0001*(float32(i))))
 	}
 	for i := 0; i < 100; i++ {
-		world.Goids = append(world.Goids, newGoid(0.02))
+		world.Goids = append(world.Goids, goids.NewGoid(0.02))
 	}
-	mu := sync.Mutex{}
 	go func() {
 		for {
 			dt := time.Millisecond * 10
 			time.Sleep(dt)
-			mu.Lock()
 			headingInc := float32(1)
 			for _, goid := range world.Goids {
 				goid.Heading += headingInc
@@ -122,7 +112,6 @@ func main() {
 					goid.Heading = 0
 				}
 			}
-			mu.Unlock()
 		}
 	}()
 	//gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
@@ -136,9 +125,7 @@ func main() {
 		elapsed := now - previousTime
 		previousTime = now
 
-		mu.Lock()
 		world.Step(time.Duration(elapsed) * time.Millisecond)
-		mu.Unlock()
 
 		gl.BindVertexArray(vao)
 		for _, goid := range world.Goids {
@@ -157,57 +144,6 @@ func main() {
 		glfw.PollEvents()
 	}
 
-}
-
-type World struct {
-	Goids []*Goid
-}
-
-func (w *World) Step(dt time.Duration) {
-	for _, g := range w.Goids {
-		g.Step(dt)
-	}
-	// Separation
-	// Velocity matching
-	// Cohesion
-}
-
-type Goid struct {
-	X       float32
-	Y       float32
-	Heading float32 // in degrees
-	Speed   float32
-	Color   mgl32.Vec4
-}
-
-func newGoid(speed float32) *Goid {
-	color := colorGreen
-	if rand.NormFloat64() > 0.5 {
-		color = colorBlue
-	}
-	return &Goid{
-		X:       0,
-		Y:       0,
-		Heading: float32(rand.Intn(360)),
-		Speed:   speed,
-		Color:   color,
-	}
-}
-
-func (g *Goid) Velocity() mgl32.Vec2 {
-	velocity := mgl32.Vec2{}
-	headingRad := float64(mgl32.DegToRad(g.Heading))
-	// correct for '0' meaning Y+
-	//headingRad += math.Pi
-	velocity[0] = -1 * float32(math.Sin(headingRad)) * g.Speed
-	velocity[1] = float32(math.Cos(headingRad)) * g.Speed
-	return velocity
-}
-
-func (g *Goid) Step(t time.Duration) {
-	v := g.Velocity()
-	g.X += v.X()
-	g.Y += v.Y()
 }
 
 var goidOutline = []float32{
