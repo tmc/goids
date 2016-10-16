@@ -1,19 +1,20 @@
-package main
+package goids
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strings"
 
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
 
-func loadShader(path string) (string, error) {
-	buf, err := ioutil.ReadFile(path)
-	return string(buf), err
+var box = rice.MustFindBox("shaders")
+
+func LoadShader(path string) (string, error) {
+	return box.String(path)
 }
 
-func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
+func NewProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
 	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
 	if err != nil {
 		fmt.Println("error compiling vertex shader")

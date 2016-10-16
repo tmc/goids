@@ -12,7 +12,7 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/pkg/profile"
+	"github.com/tmc/goids"
 )
 
 func init() {
@@ -27,8 +27,6 @@ var (
 )
 
 func main() {
-	defer profile.Start().Stop()
-
 	err := glfw.Init()
 	if err != nil {
 		panic(err)
@@ -57,15 +55,15 @@ func main() {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("OpenGL version", version)
 
-	vertexShader, err := loadShader("main.vert")
+	vertexShader, err := goids.LoadShader("main.vert")
 	if err != nil {
 		panic(err)
 	}
-	fragmentShader, err := loadShader("main.frag")
+	fragmentShader, err := goids.LoadShader("main.frag")
 	if err != nil {
 		panic(err)
 	}
-	program, err := newProgram(vertexShader, fragmentShader)
+	program, err := goids.NewProgram(vertexShader, fragmentShader)
 	if err != nil {
 		panic(err)
 	}
